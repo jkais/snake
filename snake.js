@@ -1,3 +1,8 @@
+const DIRECTION_UP = 0;
+const DIRECTION_RIGHT = 1;
+const DIRECTION_DOWN = 2;
+const DIRECTION_LEFT = 3;
+
 class Snake {
   constructor() {
     this.size = 10;
@@ -5,36 +10,38 @@ class Snake {
     this.playing = false;
     this.alive = true;
 
-    this.snakeBody = [];
-    this.snakeDirection = 3;
-    this.apple = [];
+    this.snakeBody;
+    this.snakeDirection;
+    this.apple;
 
     this.changeDirection = this.changeDirection.bind(this);
     this.startNewGame = this.startNewGame.bind(this);
   }
 
   init() {
-    this.app = document.getElementById("snake");
-
-    this.reset();
+    this.app = document.body;
+    this.drawUI();
     document.addEventListener('keydown', this.changeDirection);
     setInterval(this.tick.bind(this), this.speed)
   }
 
-  reset() {
+  drawUI() {
     this.app.textContent = "";
     let grid = document.createElement("div")
     grid.id = "grid";
     grid.style = `grid-template-columns: repeat(${this.size}, 1fr)`;
 
     for (let y = 0; y < this.size; y++) {
-      let row = [];
       for (let x = 0; x < this.size; x++) {
-        let cellDiv = document.createElement("div");
-        cellDiv.id = this.id(x, y);
-        grid.appendChild(cellDiv);
+        let cell = document.createElement("div");
+        cell.id = this.id(x, y);
+        grid.appendChild(cell);
       }
     }
+
+    this.state = document.createElement("div");
+    this.state.id = "state"
+    this.state.textContent = "GAME OVER"
 
     this.controls = document.createElement("div");
     this.controls.id = "controls"
@@ -45,17 +52,9 @@ class Snake {
     })
     this.controls.appendChild(button);
 
-
-    this.state = document.createElement("div");
-    this.state.id = "state"
-    this.state.textContent = "GAME OVER"
-
     this.app.appendChild(this.state);
     this.app.appendChild(grid);
     this.app.appendChild(this.controls);
-
-    this.resetSnake();
-    this.placeNewApple();
   }
 
   resetSnake() {
@@ -66,7 +65,7 @@ class Snake {
       this.snakeBody.push([center + i, center])
     }
 
-    this.snakeDirection = 3;
+    this.snakeDirection = DIRECTION_LEFT;
   }
 
   snakeLengthAtStart() {
@@ -74,7 +73,8 @@ class Snake {
   }
 
   startNewGame() {
-    this.reset();
+    this.resetSnake();
+    this.placeNewApple();
     this.alive = true;
     this.playing = true;
     this.controls.style.visibility = "hidden";
@@ -94,26 +94,25 @@ class Snake {
     let newHead;
 
     switch (this.snakeDirection) {
-      case 0:
-        newHead = [snakeHead[0], (snakeHead[1] - 1 + this.size) % this.size]
+      case DIRECTION_UP:
+        newHead = [snakeHead[0], (snakeHead[1] + this.size - 1) % this.size]
         break;
-      case 1:
+      case DIRECTION_RIGHT:
         newHead = [(snakeHead[0] + 1) % this.size, snakeHead[1]]
         break;
-      case 2:
+      case DIRECTION_DOWN:
         newHead = [snakeHead[0], (snakeHead[1] + 1) % this.size]
         break;
-      case 3:
+      case DIRECTION_LEFT:
         newHead = [(snakeHead[0] + this.size - 1) % this.size, snakeHead[1]]
         break;
     }
-
     if (this.snakeBody.map((e) => JSON.stringify(e)).includes(JSON.stringify(newHead))) {
       this.alive = false;
     }
 
     if (JSON.stringify(snakeHead) == JSON.stringify(this.apple))
-      this.placeNewApple()
+      this.placeNewApple();
     else
       this.snakeBody.pop();
 
@@ -126,8 +125,8 @@ class Snake {
     let appleColor = this.alive ? "red" : "black";
     let snakeColor = this.alive ? "green" : "black";
 
-    this.elementAt(...this.apple).style = `background-color: ${appleColor};`;
-    this.snakeBody.forEach((el) => this.elementAt(...el).style = `background-color: ${snakeColor};`)
+    this.elementAt(this.apple).style = `background-color: ${appleColor};`;
+    this.snakeBody.forEach((el) => this.elementAt(el).style = `background-color: ${snakeColor};`)
   }
 
   checkGameOver() {
@@ -151,8 +150,8 @@ class Snake {
     if (["ArrowRight", "d"].includes(event.key)) this.snakeDirection = (this.snakeDirection + 1) % 4
   }
 
-  elementAt(x, y) {
-    return document.getElementById(this.id(x, y))
+  elementAt(point) {
+    return document.getElementById(this.id(point[0], point[1]))
   }
 
   id(x, y) {
